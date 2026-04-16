@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HealthTrace - Monitoring Penyakit</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="container mt-5">
+    <h2 class="text-primary">HealthTrace: Monitoring Penyakit Masyarakat</h2>
+    <p>Target Pengguna: Admin Dinkes & Masyarakat [cite: 13, 26]</p>
+    <hr>
+    
+    <div class="card p-4 mb-4">
+        <h4>Input Laporan Kasus Baru</h4>
+        <form action="/lapor" method="post" enctype="multipart/form-data">
+            <input type="text" name="nama_penyakit" placeholder="Nama Penyakit" class="form-control mb-2" required>
+            <input type="text" name="lokasi" placeholder="Lokasi (Kecamatan/Desa)" class="form-control mb-2" required>
+            <label class="form-label">Upload Foto Bukti (Kirim ke S3)</label>
+            <input type="file" name="foto" class="form-control mb-2" required>
+            <button type="submit" class="btn btn-success w-100">Kirim Laporan</button>
+        </form>
+    </div>
+
+    <h4>Data Monitoring (Database RDS) [cite: 39]</h4>
+    <table class="table table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Penyakit</th>
+                <th>Lokasi</th>
+                <th>Foto Bukti (S3)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for k in kasus %}
+            <tr>
+                <td>{{ k.nama_penyakit }}</td>
+                <td>{{ k.lokasi }}</td>
+                <td><img src="{{ k.foto_url }}" width="120" class="img-thumbnail"></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

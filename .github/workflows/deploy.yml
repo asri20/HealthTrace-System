@@ -1,0 +1,35 @@
+name: Deploy HealthTrace to EC2
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_IP }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            if [ ! -d "~/HealthTrace-App" ]; then
+              git clone https://github.com/${{ github.repository }}.git ~/HealthTrace-App
+            fi
+            cd ~/HealthTrace-App
+            git pull origin main
+            
+            docker stop healthtrace || true
+            docker rm healthtrace || true
+            docker build -t healthtrace .
+            docker run -d --name healthtrace -p 80:80 \
+              -e DB_ENDPOINT=${{ secrets.DB_ENDPOINT }} \
+              -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+              -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+              -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+              healthtrace

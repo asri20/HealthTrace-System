@@ -2,6 +2,7 @@ import os
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 import boto3
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -25,38 +26,55 @@ s3_client = boto3.client(
     region_name="ap-southeast-2"
 )
 
-# Model Tabel
+# Model Tabel Lengkap
 class KasusPenyakit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    # Data Pasien
+    nama_pasien = db.Column(db.String(100))
+    tgl_lahir = db.Column(db.String(50))
+    jenis_kelamin = db.Column(db.String(20))
+    no_telepon = db.Column(db.String(20))
+    alamat = db.Column(db.Text)
+    # Informasi Penyakit
     nama_penyakit = db.Column(db.String(100))
-    lokasi = db.Column(db.String(100))
+    keluhan_detail = db.Column(db.Text)
+    lokasi_lacak = db.Column(db.String(100))
+    tanggal_lapor = db.Column(db.DateTime, default=datetime.utcnow)
     foto_url = db.Column(db.String(255))
 
 @app.route('/')
 def index():
-    kasus = KasusPenyakit.query.all()
-    return render_template('index.html', kasus=kasus)
+    kasus = KasusPenyakit.query.order_by(KasusPenyakit.tanggal_lapor.desc()).all()
+    # Logika Stats sederhana
+    total_kasus = len(kasus)
+    daerah_unik = len(set([k.lokasi_lacak for k in kasus]))
+    return render_template('index.html', kasus=kasus, total=total_kasus, daerah=daerah_unik)
 
 @app.route('/lapor', methods=['POST'])
 def lapor():
-    nama = request.form.get('nama_penyakit')
-    lokasi = request.form.get('lokasi')
-    file = request.files['foto']
+    file = request.files.get('foto')
+    foto_url = None
 
-    if file:
-        # Upload ke S3
+    if file and file.filename:
         file_path = f"uploads/{file.filename}"
         s3_client.upload_fileobj(file, S3_BUCKET, file_path, ExtraArgs={'ACL': 'public-read'})
         foto_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{file_path}"
 
-        # Simpan ke RDS
-        baru = KasusPenyakit(nama_penyakit=nama, lokasi=lokasi, foto_url=foto_url)
-        db.session.add(baru)
-        db.session.commit()
-    
+    baru = KasusPenyakit(
+        nama_pasien=request.form.get('nama_pasien'),
+        tgl_lahir=request.form.get('tgl_lahir'),
+        jenis_kelamin=request.form.get('jenis_kelamin'),
+        no_telepon=request.form.get('no_telepon'),
+        alamat=request.form.get('alamat'),
+        nama_penyakit=request.form.get('nama_penyakit'),
+        keluhan_detail=request.form.get('keluhan_detail'),
+        lokasi_lacak=request.form.get('lokasi_lacak'),
+        foto_url=foto_url
+    )
+    db.session.add(baru)
+    db.session.commit()
     return redirect(url_for('index'))
 
-# FITUR BARU: DELETE (CRUD)
 @app.route('/delete/<int:id>')
 def delete(id):
     kasus = KasusPenyakit.query.get(id)
@@ -67,5 +85,6 @@ def delete(id):
 
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all() 
+        db.drop_all()  
+        db.create_all()
     app.run(host='0.0.0.0', port=80)

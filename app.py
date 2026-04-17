@@ -45,10 +45,23 @@ class KasusPenyakit(db.Model):
 @app.route('/')
 def index():
     kasus = KasusPenyakit.query.order_by(KasusPenyakit.tanggal_lapor.desc()).all()
-    # Logika Stats sederhana
     total_kasus = len(kasus)
     daerah_unik = len(set([k.lokasi_lacak for k in kasus]))
-    return render_template('index.html', kasus=kasus, total=total_kasus, daerah=daerah_unik)
+    
+    # LOGIKA UNTUK GRAFIK (CHART)
+    dict_penyakit = {}
+    for k in kasus:
+        # Menghitung jumlah per nama penyakit
+        penyakit = k.nama_penyakit if k.nama_penyakit else "Unknown"
+        dict_penyakit[penyakit] = dict_penyakit.get(penyakit, 0) + 1
+    
+    # Kirim data ke HTML
+    return render_template('index.html', 
+                           kasus=kasus, 
+                           total=total_kasus, 
+                           daerah=daerah_unik, 
+                           labels=list(dict_penyakit.keys()), 
+                           values=list(dict_penyakit.values()))
 
 @app.route('/lapor', methods=['POST'])
 def lapor():
@@ -85,6 +98,6 @@ def delete(id):
 
 if __name__ == '__main__':
     with app.app_context():
-        # db.drop_all()  
+        # db.drop_all()  # Aktifkan hanya jika ingin reset tabel
         db.create_all()
     app.run(host='0.0.0.0', port=80)

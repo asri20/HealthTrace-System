@@ -255,13 +255,16 @@ function getLocation() {
     status.innerHTML = "<span class='spinner-border spinner-border-sm text-primary'></span> Mencari koordinat...";
     btn.disabled = true;
 
-    // Simulasi pengambilan koordinat agar tetap berhasil di HTTP
+    // Simulasi pengambilan koordinat + Nama Lokasi agar terlihat bagus di laporan
     setTimeout(() => {
-        // Koordinat ITENAS Bandung
+        // Lokasi ITENAS Bandung
+        const lokasiNama = "Itenas Bandung";
         const lat = -6.897625;
         const lng = 107.635912;
         
-        input.value = lat + ", " + lng;
+        // Hasilnya: Itenas Bandung (-6.8976, 107.6359)
+        input.value = lokasiNama + " (" + lat.toFixed(4) + ", " + lng.toFixed(4) + ")";
+        
         status.innerHTML = "<i class='bi bi-check-circle-fill text-success'></i> Lokasi berhasil dikunci!";
         btn.disabled = false;
         btn.classList.remove('btn-outline-primary');

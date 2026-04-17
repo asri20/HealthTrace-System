@@ -98,6 +98,13 @@
             place-items: center;
             font-weight: 700;
         }
+
+        /* GPS Button Styling */
+        .btn-gps {
+            border-top-right-radius: 12px !important;
+            border-bottom-right-radius: 12px !important;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -147,7 +154,13 @@
                         <input type="text" name="nama_penyakit" class="form-control" placeholder="Nama Penyakit (cth: Demam Berdarah)" required>
                     </div>
                     <div class="mb-3">
-                        <input type="text" name="lokasi_lacak" class="form-control" placeholder="Lokasi Terdeteksi (Kecamatan/Desa)" required>
+                        <div class="input-group">
+                            <input type="text" id="lokasi_input" name="lokasi_lacak" class="form-control" placeholder="Klik 'Pin' untuk GPS" required>
+                            <button class="btn btn-outline-primary btn-gps" type="button" onclick="getLocation()" id="btn_gps">
+                                <i class="bi bi-compass-fill"></i> Pin
+                            </button>
+                        </div>
+                        <small id="status_gps" class="text-muted" style="font-size: 0.7rem;"></small>
                     </div>
                     <div class="mb-3">
                         <textarea name="keluhan_detail" class="form-control" placeholder="Keluhan singkat pasien..." rows="2"></textarea>
@@ -242,5 +255,39 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+function getLocation() {
+    const status = document.getElementById('status_gps');
+    const input = document.getElementById('lokasi_input');
+    const btn = document.getElementById('btn_gps');
+
+    if (!navigator.geolocation) {
+        status.innerHTML = "<i class='bi bi-exclamation-triangle-fill text-danger'></i> Browser kamu tidak mendukung GPS.";
+    } else {
+        status.innerHTML = "<span class='spinner-border spinner-border-sm text-primary' role='status'></span> Mencari koordinat...";
+        btn.disabled = true;
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                // Memasukkan koordinat ke dalam input
+                input.value = lat.toFixed(6) + ", " + lng.toFixed(6);
+                status.innerHTML = "<i class='bi bi-check-circle-fill text-success'></i> Lokasi berhasil dikunci!";
+                btn.disabled = false;
+                btn.classList.remove('btn-outline-primary');
+                btn.classList.add('btn-success');
+            },
+            (error) => {
+                status.innerHTML = "<i class='bi bi-x-circle-fill text-danger'></i> Gagal mengambil lokasi (Pastikan GPS aktif).";
+                btn.disabled = false;
+            },
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
+    }
+}
+</script>
+
 </body>
 </html>
